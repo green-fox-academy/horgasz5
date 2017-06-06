@@ -15,9 +15,6 @@ void startup()
     printf("-l   Lists all the tasks\n");
     printf("-e   Empty the list\n");
     printf("-r   Removes a task\n");
-    printf("-c   Completes a task\n");
-    printf("-p   Add priority to a task\n");
-    printf("-lp  Lists all the tasks by priority\n");
     printf("====================\n");
     printf("Your command: \n");
 }

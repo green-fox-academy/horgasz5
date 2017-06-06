@@ -23,7 +23,7 @@ int main(void) {
             }else if (guess > r) {
                 printf("Too high... Try again!\n");
             }else{
-                printf("Congratulations. You won in %d tries!\n", counter+1);
+                printf("Congratulations. You won in %d tries!\n", counter + 1);
                 correct = true;
                 break;
         }
