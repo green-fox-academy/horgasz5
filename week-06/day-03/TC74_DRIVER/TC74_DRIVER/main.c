@@ -20,6 +20,7 @@ void system_init()
 {
 	//TODO
 	// Call the TWI driver init function
+	TWI_init();
 
 	//TODO
 	//Init the uart

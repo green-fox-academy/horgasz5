@@ -7,27 +7,30 @@ void TWI_init(void)
 {
 	// TODO:
 	// Set Prescaler to 4
-
+	TWSR = (1 << TWPS0);
+	//TWPS1 TWPS0 0:1
 
 	// TODO:
-	// Set SCL frequency = 11059200 / (16 + 2 * 48 * 4) = 27.648Khz
+	// Set SCL frequency = 16000000 / (16 + 2 * 48 * 4) = 40Khz
 	//So set the correct register to 0x30
-
-
+	//TWSR 292. page
+	//309. page
+	TWBR = 0x30;
 	// TODO
 	//Enable TWI
-
+	TWCR = (1 << TWEN);
 }
 
 void TWI_start(void)
 {
 	//TODO
 	//Send start signal
-
+	TWCR = (1 << TWINT) | (1 << TWSTA) | (1 << TWEN);
 
 	// TODO:
 	// Wait for TWINT Flag set. This indicates that
 	//the START condition has been transmitted.
+	while (! (TWCR & (1 << TWINT)));
 
 }
 
@@ -35,6 +38,7 @@ void TWI_stop(void)
 {
 	//TODO
 	//Send stop signal
+	TWCR = (1 << TWINT) | (1 << TWEN) | (1 << TWSTO);
 
 }
 
