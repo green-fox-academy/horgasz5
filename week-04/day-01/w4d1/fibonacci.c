@@ -1,3 +1,6 @@
+#include <stdio.h>
+#include <string.h>
+
 /* Write a function which is called "get_fibonacci_number". It returns the "N"th
  * Fibonacci number, where "N" is received as a paramter.
  * For example:

@@ -3,23 +3,21 @@
 #include <avr/interrupt.h>
 #include <stdint.h>
 
-ISR(USART_RX_vect)
-{
+ISR(USART_RX_vect) {
 	// Put received character into the circular buffer
 	*(rx_buffer.write_ptr) = UDR0;
 
 	// Increment the write ptr
 	// Be aware that the write ptr might point to the end of the buffer.
 	// In this case you have to set it back to the start of the buffer
-	if (rx_buffer.write_ptr == rx_buffer.tail)
-	rx_buffer.write_ptr = rx_buffer.head;
-	else
-	rx_buffer.write_ptr++;
-
+	if(rx_buffer.write_ptr == rx_buffer.tail) {
+		rx_buffer.write_ptr = rx_buffer.head;
+		} else {
+		rx_buffer.write_ptr++;
+	}
 }
 
-void UART_init()
-{
+void UART_Init() {
 	// See the datasheet on page 246 for hints and table 25-9.
 
 	// At first set the baud rate to 9600
@@ -42,27 +40,25 @@ void UART_init()
 
 	// Initialize circular buffer pointers, they should point to the head of the buffer
 	rx_buffer.head = &(rx_buffer.buffer[0]);
-	rx_buffer.tail = &(rx_buffer.buffer[RX_CIRC_BUFF_LEN - 1]);
+	rx_buffer.tail = &(rx_buffer.buffer[RX_CIRC_BUFF_LEN-1]);
 	rx_buffer.read_ptr = rx_buffer.head;
 	rx_buffer.write_ptr = rx_buffer.head;
 }
 
-void UART_send_character(char character)
-{
+void UART_SendCharacter(char character) {
 	// This function can send a character through UART with polling method
 	// See page 247 of the datasheet for hints, be aware that the code in the datasheet has a problem :)
 
 	// Wait for empty USART buffer register
-	while ( !( UCSR0A & (1 << UDRE0)) );
+	while ( !( UCSR0A & (1<<UDRE0)) );
 
 	// Put data to USART buffer register
 	UDR0 = character;
 }
 
-char UART_get_character()
-{
+char UART_GetCharacter() {
 	// Wait for data in the circular buffer, this can be detected if the write and read pointers are pointing to the same memory block
-	while (rx_buffer.read_ptr == rx_buffer.write_ptr);
+	while(rx_buffer.read_ptr == rx_buffer.write_ptr);
 
 	// Save the data to a temporary variable
 	char to_return = *rx_buffer.read_ptr;
@@ -70,11 +66,11 @@ char UART_get_character()
 	// Increment the read ptr
 	// Be aware that the read ptr might point to the end of the buffer.
 	// In this case you have to set it back to the start of the buffer
-	if (rx_buffer.read_ptr == rx_buffer.tail)
-	rx_buffer.read_ptr = rx_buffer.head;
-	else
-	rx_buffer.read_ptr++;
-
+	if(rx_buffer.read_ptr == rx_buffer.tail) {
+		rx_buffer.read_ptr = rx_buffer.head;
+		} else {
+		rx_buffer.read_ptr++;
+	}
 
 	// Return the read character
 	return to_return;

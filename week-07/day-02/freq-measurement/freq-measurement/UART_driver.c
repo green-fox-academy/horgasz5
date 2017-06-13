@@ -1,7 +1,7 @@
 #include "UART_driver.h"
 #include <avr/io.h>
-#include <avr/interrupt.h>
 #include <stdint.h>
+#include <avr/interrupt.h>
 
 ISR(USART_RX_vect)
 {
@@ -22,7 +22,7 @@ void UART_init()
 {
 	// See the datasheet on page 246 for hints and table 25-9.
 
-	// At first set the baud rate to 9600
+	// At first set the baud rate to 115200
 	// The CPU clock frequency is 16MHz
 	uint16_t ubbr = 8;
 	UBRR0H = ubbr >> 8;
@@ -62,10 +62,10 @@ void UART_send_character(char character)
 char UART_get_character()
 {
 	// Wait for data in the circular buffer, this can be detected if the write and read pointers are pointing to the same memory block
-	while (rx_buffer.read_ptr == rx_buffer.write_ptr);
+	while ((rx_buffer.read_ptr) == (rx_buffer.write_ptr));
 
 	// Save the data to a temporary variable
-	char to_return = *rx_buffer.read_ptr;
+	char to_return = *(rx_buffer.read_ptr);
 
 	// Increment the read ptr
 	// Be aware that the read ptr might point to the end of the buffer.
@@ -78,4 +78,12 @@ char UART_get_character()
 
 	// Return the read character
 	return to_return;
+}
+
+uint8_t UART_is_buffer_empty()
+{
+	if (rx_buffer.read_ptr == rx_buffer.write_ptr)
+	return 1;
+	else
+	return 0;
 }

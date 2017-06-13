@@ -7,15 +7,13 @@ void TWI_init(void)
 {
 	// TODO:
 	// Set Prescaler to 4
-	TWSR = (1 << TWPS0);
-	//TWPS1 TWPS0 0:1
+	TWSR = 0x01;
 
 	// TODO:
-	// Set SCL frequency = 16000000 / (16 + 2 * 48 * 4) = 40Khz
+	// Set SCL frequency = 16000000 / (16 + 2 * 48 * 4) = 40kHz
 	//So set the correct register to 0x30
-	//TWSR 292. page
-	//309. page
 	TWBR = 0x30;
+
 	// TODO
 	//Enable TWI
 	TWCR = (1 << TWEN);
@@ -30,16 +28,14 @@ void TWI_start(void)
 	// TODO:
 	// Wait for TWINT Flag set. This indicates that
 	//the START condition has been transmitted.
-	while (! (TWCR & (1 << TWINT)));
-
+	while ((TWCR & (1 << TWINT)) == 0);
 }
 
 void TWI_stop(void)
 {
 	//TODO
 	//Send stop signal
-	TWCR = (1 << TWINT) | (1 << TWEN) | (1 << TWSTO);
-
+	TWCR = (1 << TWINT) | (1 << TWSTO) | (1 << TWEN);
 }
 
 uint8_t TWI_read_ack(void)
@@ -49,7 +45,9 @@ uint8_t TWI_read_ack(void)
 	//Wait for TWINT Flag set. This indicates that
 	//the DATA has been transmitted, and ACK/
 	//NACK has been received.
-
+	TWCR = (1 << TWINT) | (1 << TWEN) | (1 << TWEA);
+	while ((TWCR & (1 << TWINT)) == 0);
+	return TWDR;
 }
 
 
@@ -60,7 +58,9 @@ uint8_t TWI_read_nack(void)
 	//Wait for TWINT Flag set. This indicates that
 	//the DATA has been transmitted, and ACK/
 	//NACK has been received.
-
+	TWCR = (1 << TWINT) | (1 << TWEN);
+	while ((TWCR & (1 << TWINT)) == 0);
+	return TWDR;
 }
 
 void TWI_write(uint8_t u8data)
@@ -71,15 +71,29 @@ void TWI_write(uint8_t u8data)
 	//Wait for TWINT Flag set. This indicates that
 	//the DATA has been transmitted, and ACK/
 	//NACK has been received.
-
+	TWDR = u8data;
+	TWCR = (1 << TWINT) | (1 << TWEN);
+	while ((TWCR & (1 << TWINT)) == 0);
 }
 
 //TODO
 //Write a function that communicates with the TC74A0.
-//The function need to be take the address of the ic as a parameter.
 //datasheet: http://ww1.microchip.com/downloads/en/DeviceDoc/21462D.pdf
 //And returns with the temperature.
 
+uint8_t read_temp (uint8_t address)
+{
+
+	TWI_start();
+	TWI_write(address << TWA0 | TC_WRITE << TWGCE);
+	TWI_write(0);
+	TWI_start();
+	TWI_write(address << TWA0 | TC_READ << TWGCE);
+	uint8_t ii = TWI_read_nack();
+	TWI_stop();
+
+	return ii;
+}
 
 //TODO Advanced:
 //Calculate the average of the last 16 data, and returns with that.

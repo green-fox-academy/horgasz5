@@ -6,10 +6,9 @@
 
 #define TC_WRITE	0
 #define TC_READ		1
-//TODO
-//Define the TC74A0 address :  --> 1001 000 : 0x48 vagy 0x90
-	TWDR = 0x90;
+#define TC_ADDRESS	0b1001000	//TC74A0 address
 
+uint8_t read_temp (uint8_t address);
 void TWI_init(void);
 void TWI_start(void);
 void TWI_write(uint8_t u8data);
