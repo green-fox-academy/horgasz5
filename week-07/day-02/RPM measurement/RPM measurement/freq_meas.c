@@ -1,55 +1,73 @@
 #include <avr/io.h>
 #include <stdint.h>
 #include <avr/interrupt.h>
+#include <math.h>
 #include "freq_meas.h"
 
-uint8_t tick_count = 0;
-uint8_t tick_counted = 0;
-uint16_t tick_prev = 0;
-uint16_t tick_now = 0;
-
-// TODO:
-// Write the interrupt handlers
-ISR(TIMER1_OVF_vect)
-{
-	tick_count++;
-}
+static volatile uint16_t last_reg_value;
+static volatile uint16_t prev_reg_value;
+static volatile uint16_t ovf_value;
+static volatile uint16_t ovf_cntr;
 
 ISR(TIMER1_CAPT_vect)
 {
-	tick_counted = tick_count;
-	tick_count = 0;
-	tick_prev = tick_now;
-	tick_now = TCNT1;
+	ovf_value = ovf_cntr;
+	ovf_cntr = 0;
+	prev_reg_value = last_reg_value;
+	last_reg_value = ICR1;
+}
+
+ISR(TIMER1_OVF_vect)
+{
+	ovf_cntr++;
 }
 
 void freq_meas_init()
 {
+	// Variable initialization
+	prev_reg_value = last_reg_value = ovf_cntr = 0;
+
 	/**************
 	 * TC1 CONFIG *
 	 **************/
 	// TODO:
 	// Configure the TC1 timer properly :)
-	
-	//Set prescale to 1024
-	TCCR1B |= 0b101;
-	
-	//Enable Overflow Interrupt - TIFR1 / TOV1 bit is the flag
-	TIMSK1 |= 1 << TOIE1;
-	
-	//Enable Capture Interrupt - TIFR1 / ICF1 bit is the flag
+
+	// TC1 Input capture interrupt enable
 	TIMSK1 |= 1 << ICIE1;
-	
-	//Enable both interrupts
-	//TIMSK1 = 0b100001;
+	// TC1 overflow interrupt enable
+	TIMSK1 |= 1 << TOIE1;
+	// TC1 clock select, this will also start the timer!
+	TCCR1B = CS_DEFAULT;
 }
 
-// TODO:
-// Write this function. It returns the measured frequency in Hz
 float get_freq()
 {
-	// 0.000064 is: prescale / Fcpu. Now its: 1024 / 16.000.000
-	float freq = ( 1 / ( 0.000064 * (65535 * tick_counted - tick_prev + tick_now)));
-	
-	return freq;
+	// The interrupts must be disabled while accessing variables which are used in interrupt handlers
+	cli();
+	// Copy the used variables as fast as possible.
+	uint16_t last = last_reg_value;
+	uint16_t prev = prev_reg_value;
+	uint16_t ovf = ovf_value;
+	sei();
+
+	// This difference can be negative, that is why int32_t is used!
+	// One of the variables should be casted to int32_t to avoid unexpected underflow
+	int32_t diff = (int32_t)last - (int32_t)prev;
+
+	// Steps will be always positive, so uint32_t can be used.
+	// One of the variables should be casted to uint32_t to avoid unexpected overflof during multiplication
+	uint32_t steps = ((uint32_t)ovf) * (OVF_STEPS) + diff;
+
+
+	// One of the variables should be casted to float
+	float period = TC1_STEP_TIME_S * (float)steps;
+	float freq =  1 / period;
+
+	// If you divide with zero in C the result will be NaN (not a number)
+	// Check if the frequency is Nan, and return negative number in this case
+	if (isnan(freq) || isinf(freq))
+		return -1;
+	else
+		return freq;
 }
