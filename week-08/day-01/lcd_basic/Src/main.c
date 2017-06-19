@@ -123,7 +123,7 @@ int main(void)
 			}
 		for (int i = 9; i >= 1; i--)
 		{
-			if (i %2 == 1) {
+			if (i % 2 == 1) {
 				BSP_LCD_SetTextColor(LCD_COLOR_RED);
 				BSP_LCD_FillCircle(240, 136, i * 10);
 				HAL_Delay(500);
@@ -135,6 +135,7 @@ int main(void)
 		}
 		BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
 		BSP_LCD_FillCircle(240, 136, 3);
+		HAL_Delay(500);
 	  }
 }
 
