@@ -56,7 +56,7 @@ float get_freq()
 	int32_t diff = (int32_t)last - (int32_t)prev;
 
 	// Steps will be always positive, so uint32_t can be used.
-	// One of the variables should be casted to uint32_t to avoid unexpected overflow during multiplication
+	// One of the variables should be casted to uint32_t to avoid unexpected overflof during multiplication
 	uint32_t steps = ((uint32_t)ovf) * (OVF_STEPS) + diff;
 
 

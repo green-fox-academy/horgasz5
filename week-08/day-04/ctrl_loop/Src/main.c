@@ -37,7 +37,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include <string.h>
+#include "stm32746g_discovery_lcd.h"
 
 /** @addtogroup STM32F7xx_HAL_Examples
   * @{
@@ -48,21 +48,22 @@
   */ 
 
 /* Private typedef -----------------------------------------------------------*/
+typedef struct {
+	uint32_t ovf;
+	uint32_t prev;
+	uint32_t last;
+} input_capture_data_t;
+
 /* Private define ------------------------------------------------------------*/
+//#define USE_P_CTRLER
+
+
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-UART_HandleTypeDef uart_handle;
+ADC_HandleTypeDef AdcHandle;
+ADC_ChannelConfTypeDef sConfig;
 
 /* Private function prototypes -----------------------------------------------*/
-
-#ifdef __GNUC__
-/* With GCC/RAISONANCE, small printf (option LD Linker->Libraries->Small printf
-   set to 'Yes') calls __io_putchar() */
-#define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
-#else
-#define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
-#endif /* __GNUC__ */
-
 static void SystemClock_Config(void);
 static void Error_Handler(void);
 static void MPU_Config(void);
@@ -77,12 +78,12 @@ static void CPU_CACHE_Enable(void);
   */
 int main(void)
 {
-  /* This project template calls firstly two functions in order to configure MPU feature 
+  /* This project template calls firstly two functions in order to configure MPU feature
      and to enable the CPU Cache, respectively MPU_Config() and CPU_CACHE_Enable().
-     These functions are provided as template implementation that User may integrate 
-     in his application, to enhance the performance in case of use of AXI interface 
-     with several masters. */ 
-  
+     These functions are provided as template implementation that User may integrate
+     in his application, to enhance the performance in case of use of AXI interface
+     with several masters. */
+
   /* Configure the MPU attributes as Write Through */
   MPU_Config();
 
@@ -101,51 +102,47 @@ int main(void)
   SystemClock_Config();
 
 
-  /* Add your application code here
-     */
+  /* Add your application code here */
   BSP_LED_Init(LED_GREEN);
-  BSP_PB_Init(BUTTON_KEY, BUTTON_MODE_GPIO);
+  BSP_LCD_Init();
+  BSP_LCD_LayerDefaultInit(0, LCD_FB_START_ADDRESS);
+  BSP_LCD_SelectLayer(0);
+  BSP_LCD_DisplayOn();
+  BSP_LCD_Clear(LCD_COLOR_BLACK);
 
-  uart_handle.Init.BaudRate   = 9600;
-  uart_handle.Init.WordLength = UART_WORDLENGTH_8B;
-  uart_handle.Init.StopBits   = UART_STOPBITS_1;
-  uart_handle.Init.Parity     = UART_PARITY_NONE;
-  uart_handle.Init.HwFlowCtl  = UART_HWCONTROL_NONE;
-  uart_handle.Init.Mode       = UART_MODE_TX_RX;
+  HAL_ADC_MspInit(&AdcHandle);
 
-  BSP_COM_Init(COM1, &uart_handle);
+  HAL_ADC_Init(&AdcHandle);
 
-  /* Output without printf, using HAL function*/
-  char msg[] = "UART HAL Example\r\n";
-  HAL_UART_Transmit(&uart_handle, msg, strlen(msg), 100);
+  AdcHandle.Instance = ADC3;
+  AdcHandle.Init.ClockPrescaler = ADC_CLOCKPRESCALER_PCLK_DIV4;
+  AdcHandle.Init.Resolution = ADC_RESOLUTION_12B;
+  AdcHandle.Init.ScanConvMode = DISABLE;
+  AdcHandle.Init.ContinuousConvMode = ENABLE;
 
-  /* Output a message using printf function */
-  printf("UART Printf Example: retarget the C library printf function to the UART\r\n");
-  printf("** Test finished successfully. ** \r\n");
+  HAL_ADC_ConfigChannel(&AdcHandle, &sConfig);
 
-  /* Infinite loop */
+	sConfig.Channel = ADC_CHANNEL_0;
+	sConfig.Rank = 1;
+	sConfig.SamplingTime = ADC_SAMPLETIME_480CYCLES;
+	sConfig.Offset = 0;
+	uint32_t value;
+
+    /* Infinite loop */
   while (1)
   {
-	  if (BSP_PB_GetState(BUTTON_KEY) == GPIO_PIN_RESET)
-		  BSP_LED_On(LED_GREEN);
-	  else
-		  BSP_LED_Off(LED_GREEN);
+	  char buff[100];
+		HAL_ADC_Start(&AdcHandle);
+	  HAL_ADC_PollForConversion(&AdcHandle, 1000);
+	  value = HAL_ADC_GetValue(&AdcHandle);
+	  //HAL_ADC_Stop(&AdcHandle);
+
+	  sprintf(buff, "%d", value);
+	  BSP_LCD_ClearStringLine(0);
+	  BSP_LCD_DisplayStringAtLine(0, (uint8_t *)buff);
+	  BSP_LED_Toggle(LED_GREEN);
+	  HAL_Delay(10);
   }
-}
-
-
-/**
-  * @brief  Retargets the C library printf function to the USART.
-  * @param  None
-  * @retval None
-  */
-PUTCHAR_PROTOTYPE
-{
-  /* Place your implementation of fputc here */
-  /* e.g. write a character to the EVAL_COM1 and Loop until the end of transmission */
-  HAL_UART_Transmit(&uart_handle, (uint8_t *)&ch, 1, 0xFFFF);
-
-  return ch;
 }
 
 /**
