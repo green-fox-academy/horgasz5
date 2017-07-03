@@ -8,8 +8,8 @@
 
 int main()
 {
-    char ipaddress[] = "127.0.0.1";       //IP Address of the server
-    int port = 54000;                   //port on server
+    char ipaddress[] = "10.27.6.47";       //IP Address of the server
+    int port = 54545;                   //port on server
 
     //Initialize WinSock
     WSADATA data;
