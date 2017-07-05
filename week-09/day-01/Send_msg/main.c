@@ -8,7 +8,7 @@
 
 int main()
 {
-    char ipaddress[] = "10.27.6.47";       //IP Address of the server
+    char ipaddress[] = "10.27.6.222";       //IP Address of the server
     int port = 54545;                   //port on server
 
     //Initialize WinSock
